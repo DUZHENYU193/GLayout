@@ -1,0 +1,72 @@
+name: Test glayout
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'openfasoc/common/**'
+      - 'openfasoc/generators/common/**'
+      - 'openfasoc/generators/glayout/**'
+      - '.github/workflows/glayout_sky130.yml'
+      - '.github/scripts/test_glayout_ci.py'
+  workflow_dispatch:
+
+jobs:
+  glayout_sky130:
+    strategy:
+      matrix:
+        component: [nmos, pmos, diff_pair, current_mirror, opamp]
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove unnecessary files
+        run: |
+          du . -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          du . -h
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up workspace and docker
+        env:
+          IMAGE_NAME: msaligane/openfasoc:stable
+        run: |
+          pushd $GITHUB_WORKSPACE
+          touch glayout.log
+
+          docker pull $IMAGE_NAME
+          cp ./.github/scripts/test_glayout_ci.py ./openfasoc/generators/glayout/
+
+          docker run --rm \
+            -d \
+            -v $PWD:$PWD \
+            -w $PWD \
+            --name test-runner \
+            $IMAGE_NAME \
+            bash -c "\
+              while true; do if [[ -f /tmp/glayout_test_complete ]]; then break; else sleep 5; fi; done
+            "
+
+          docker exec test-runner \
+            bash -c "
+              pip uninstall glayout -y &&\
+              cd ./openfasoc/generators/glayout &&\
+              pip3 install --force-reinstall -r requirements.txt
+            "
+
+      - name: Test ${{ matrix.component }} component
+        run: |
+          docker exec test-runner \
+            bash -c "
+              cd ./openfasoc/generators/glayout
+              python3 test_glayout_ci.py --component ${{ matrix.component }}
+
+              touch /tmp/glayout_test_complete
+            " && exit_code=$? | tee -a glayout.log
+
+          if [ $? -ne 0 ]; then echo "Docker command exited with non-zero code" && exit 1; fi
+          if grep "\[ERROR\]" glayout.log; then echo "Glayout logs have an error" && exit 1; else echo "Test completed successfully" && exit 0; fi

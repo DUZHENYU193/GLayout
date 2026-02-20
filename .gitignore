@@ -1,0 +1,8 @@
+*.sh
+*.gz
+*.tar.gz
+*.lib
+*.prn
+*.raw
+output.txt
+docker/
