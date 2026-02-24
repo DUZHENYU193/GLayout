@@ -25,6 +25,11 @@ from glayout.flow.blocks.composite.differential_to_single_ended_converter import
 from glayout.flow.blocks.composite.opamp.row_csamplifier_diff_to_single_ended_converter import row_csamplifier_diff_to_single_ended_converter
 
 
+"""
+place a differential pair with its bias current mirror stacked on top, with the common source node of the diff pair connected to the output of the current mirror. 
+This is a common structure for the input stage of an op amp, where stacking the current mirror on top of the diff pair allows for a smaller layout area and better matching between the diff pair and its bias current mirror. 
+The function also routes the necessary connections between the diff pair and the current mirror, and adds a ground pin for the biasing network.
+"""
 @validate_arguments
 def __add_diff_pair_and_bias(pdk: MappedPDK, toplevel_stacked: Component, half_diffpair_params: tuple[float, float, int], diffpair_bias: tuple[float, float, int], rmult: int, with_antenna_diode_on_diffinputs: int) -> Component:
     clear_cache()
@@ -36,6 +41,10 @@ def __add_diff_pair_and_bias(pdk: MappedPDK, toplevel_stacked: Component, half_d
 
     return toplevel_stacked
 
+
+"""
+Base on the diff pair with current mirror bias, creates the common source bias transistors for the diff pair as a stacked current mirror, and places them symmetrically on either side of the diff pair.
+"""
 @validate_arguments
 def __add_common_source_nbias_transistors(pdk: MappedPDK, toplevel_stacked: Component, half_common_source_nbias: tuple[float, float, int, int], rmult: int) -> Component:
     clear_cache()
@@ -61,10 +70,18 @@ def __add_common_source_nbias_transistors(pdk: MappedPDK, toplevel_stacked: Comp
         toplevel_stacked << straight_route(pdk, toplevel_stacked.ports["commonsource_cmirror_output_"+side+"_tie_S_top_met_S"], toplevel_stacked.ports["commonsource_cmirror_ref_"+side+"_tie_N_top_met_N"])
     return toplevel_stacked
 
+
+"""
+gnd routing for the bias current mirror and diff pair, and routing between the diff pair and current mirror. 
+diode connections for cmirror reference and output gates and drains to tie them together.
+substrate tap connections for diff pair and cmirror bias to ensure good grounding and reduce substrate noise coupling.
+guardring connections to ground for the cmirror and diff pair to ensure they are well protected from latchup and have good substrate contact.
+returns the toplevel_stacked component with all routing, and also returns references to the half common source bias transistors for later use in the amplifier stage of the op amp.
+"""
 @validate_arguments
 def __route_bottom_ncomps_except_drain_nbias(pdk: MappedPDK, toplevel_stacked: Component, gndpin: Union[Component,ComponentReference], halfmultn_num_mults: int) -> tuple:
     clear_cache()
-    # route diff pair cmirror
+    # route diff pair cmirror to gnd
     toplevel_stacked << L_route(pdk, toplevel_stacked.ports["diffpair_ibias_purposegndport"],gndpin.ports["W"])
     # gnd diff pair substrate tap
     toplevel_stacked << straight_route(pdk, toplevel_stacked.ports["diffpair_tap_W_top_met_E"], toplevel_stacked.ports["commonsource_cmirror_output_L_tie_E_top_met_W"],width=1,glayer2="met1")
@@ -104,7 +121,9 @@ def __route_bottom_ncomps_except_drain_nbias(pdk: MappedPDK, toplevel_stacked: C
     toplevel_stacked << L_route(pdk,toplevel_stacked.ports["diffpair_source_routeE_con_N"],toplevel_stacked.ports["diffpair_ibias_B_drain_E"])
     return toplevel_stacked, halfmultn_drain_routeref, halfmultn_gate_routeref, _cref
 
-
+"""
+connects the diff pair source to tail current drain, routing
+"""
 def diff_pair_stackedcmirror(
     pdk: MappedPDK,
     half_diffpair_params: tuple[float, float, int],

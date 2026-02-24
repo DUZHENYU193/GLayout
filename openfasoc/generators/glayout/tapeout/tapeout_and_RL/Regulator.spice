@@ -1,0 +1,56 @@
+** sch_path: /home/du/Anglog/Low-dropout-Voltage-Regulator-LDO-using-SKY130PDK/Schematics/Regulator.sch
+**.subckt Regulator
+x1 VDD VSS net3 net1 Vreference bias Err_amp_50u
+Vin VDD GND 1.8
+V2 VSS GND -1.5
+Vref Vreference GND 0.675
+I0 VDD bias 50u
+C1 net1 net2 30p m=1
+R1 net2 VReg 20 m=1
+R2 VReg net3 500k m=1
+R3 net3 GND 500k m=1
+C2 VReg GND 100p m=1
+XMpass VReg net1 VDD VDD sky130_fd_pr__pfet_01v8 L=0.15 W=21.818 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=1000 m=1000
+IL VReg GND 40m
+**** begin user architecture code
+
+
+.lib /home/du/eda_tools/open_pdks/sky130/sky130A/libs.tech/ngspice/sky130.lib.spice tt
+**.dc IL 20m 40m 1m
+**.dc Vin 3 1.5 0.1m
+**.dc Vin 1.5 3 0.1m IL 1m 50m 0.1m
+**.ac dec 20 1 1e8 .5
+.dc temp -50 150 1
+**.tran 10n 10u uic
+.save all
+
+**** end user architecture code
+**.ends
+
+* expanding   symbol:  Err_amp_50u.sym # of pins=6
+** sym_path: /home/du/Anglog/Low-dropout-Voltage-Regulator-LDO-using-SKY130PDK/Schematics/Err_amp_50u.sym
+** sch_path: /home/du/Anglog/Low-dropout-Voltage-Regulator-LDO-using-SKY130PDK/Schematics/Err_amp_50u.sch
+.subckt Err_amp_50u Vin VSS vfb Vout vref Ib
+*.ipin Vin
+*.ipin VSS
+*.ipin Ib
+*.opin Vout
+*.ipin vfb
+*.ipin vref
+XM36 net1 net1 Vin Vin sky130_fd_pr__pfet_01v8_lvt L=1 W=7 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=1 m=1
+XM1 Vout net1 Vin Vin sky130_fd_pr__pfet_01v8_lvt L=1 W=7 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=1 m=1
+XM31 net1 vfb net2 VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=20.7 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=10 m=10
+XM2 Vout vref net2 VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=20.7 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29'
++ pd='2*int((nf+1)/2) * (W/nf + 0.29)' ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=10 m=10
+XM34 Ib Ib VSS VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=5 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=1 m=1
+XM3 net2 Ib VSS VSS sky130_fd_pr__nfet_01v8_lvt L=1 W=5 nf=1 ad='int((nf+1)/2) * W/nf * 0.29' as='int((nf+2)/2) * W/nf * 0.29' pd='2*int((nf+1)/2) * (W/nf + 0.29)'
++ ps='2*int((nf+2)/2) * (W/nf + 0.29)' nrd='0.29 / W' nrs='0.29 / W' sa=0 sb=0 sd=0 mult=1 m=1
+.ends
+
+.GLOBAL GND
+.end
