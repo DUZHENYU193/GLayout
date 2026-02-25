@@ -94,8 +94,17 @@ def __create_and_route_pins(
     # generate and route output pin from the right PMOS load
     # ==========================================
     vout_pin = opamp_single_top << rectangle(size=(5,3), layer=pdk.get_glayer("met4"), centered=True)
-    vout_pin.movex(opamp_single_top.xmax).movey(opamp_single_top.ports["pcomps_mimcap_connection_con_S"].center[1])
-    opamp_single_top << straight_route(pdk, opamp_single_top.ports["pcomps_mimcap_connection_con_S"], vout_pin.ports["e3"], glayer1="met4")
+    
+    
+    try:
+        vout_port = opamp_single_top.ports["pcomps_mimcap_connection_con_E"]
+        vout_pin.movex(opamp_single_top.xmax).movey(vout_port.center[1])
+        opamp_single_top << straight_route(pdk, vout_port, vout_pin.ports["e3"], glayer1="met4")
+    except KeyError:
+        # if the expected port name doesn't exist, default to using the S of the right PMOS load and move the pin accordingly
+        vout_port = opamp_single_top.ports["pcomps_mimcap_connection_con_S"]
+        vout_pin.movex(opamp_single_top.xmax + 5).movey(vout_port.center[1] - 5)
+        opamp_single_top << L_route(pdk, vout_port, vout_pin.ports["e3"], vglayer="met4", hglayer="met4")
 
     # ==========================================
     # add ports for external connections
@@ -194,31 +203,31 @@ def opamp_singlestage(
 
     return opamp_single_top
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    from glayout.flow.pdk.sky130_mapped import sky130_mapped_pdk
-    import os
+#     from glayout.flow.pdk.sky130_mapped import sky130_mapped_pdk
+#     import os
     
-    print("Generating single-stage opamp layout...")
-    
-
-    my_single_opamp = opamp_singlestage(
-        pdk=sky130_mapped_pdk,
-        half_diffpair_params=(20.7, 1, 10),
-        diffpair_bias=(5, 1, 1),
-        half_pload=(7, 1, 1)
-    )
+#     print("Generating single-stage opamp layout...")
     
 
-    gds_filename = "opamp_singlestage.gds"
-    my_single_opamp.write_gds(gds_filename)
-    print(f"Layout successfully exported to: {os.path.abspath(gds_filename)}")
+#     my_single_opamp = opamp_singlestage(
+#         pdk=sky130_mapped_pdk,
+#         half_diffpair_params=(20.7, 1, 10),
+#         diffpair_bias=(5, 1, 1),
+#         half_pload=(7, 1, 1)
+#     )
+    
+
+#     gds_filename = "opamp_singlestage.gds"
+#     my_single_opamp.write_gds(gds_filename)
+#     print(f"Layout successfully exported to: {os.path.abspath(gds_filename)}")
         
 
-    print("\n================ Extracted SPICE Netlist ================")
+#     print("\n================ Extracted SPICE Netlist ================")
 
-    try:
-        netlist_str = my_single_opamp.info['netlist'].generate_netlist()
-        print(netlist_str)
-    except AttributeError:
-        print(my_single_opamp.info['netlist'])
+#     try:
+#         netlist_str = my_single_opamp.info['netlist'].generate_netlist()
+#         print(netlist_str)
+#     except AttributeError:
+#         print(my_single_opamp.info['netlist'])

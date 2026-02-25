@@ -1,0 +1,3 @@
+
+opamp run 0 with the following params failed: 
+{'half_diffpair_params': (6.0, 1.0, 4.0), 'diffpair_bias': (6.0, 2.0, 4.0), 'half_common_source_params': (7.0, 1.0, 10.0, 3.0), 'half_common_source_bias': (6.0, 2.0, 8.0, 2.0), 'output_stage_params': (5.0, 1.0, 16.0), 'output_stage_bias': (6.0, 2.0, 4.0), 'half_pload': (6.0, 1.0, 6.0), 'mim_cap_size': (12.0, 12.0), 'mim_cap_rows': -1, 'rmult': 2}
