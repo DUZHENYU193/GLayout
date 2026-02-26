@@ -203,31 +203,31 @@ def opamp_singlestage(
 
     return opamp_single_top
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     from glayout.flow.pdk.sky130_mapped import sky130_mapped_pdk
-#     import os
+    from glayout.flow.pdk.sky130_mapped import sky130_mapped_pdk
+    import os
     
-#     print("Generating single-stage opamp layout...")
-    
-
-#     my_single_opamp = opamp_singlestage(
-#         pdk=sky130_mapped_pdk,
-#         half_diffpair_params=(20.7, 1, 10),
-#         diffpair_bias=(5, 1, 1),
-#         half_pload=(7, 1, 1)
-#     )
+    print("Generating single-stage opamp layout...")
     
 
-#     gds_filename = "opamp_singlestage.gds"
-#     my_single_opamp.write_gds(gds_filename)
-#     print(f"Layout successfully exported to: {os.path.abspath(gds_filename)}")
+    my_single_opamp = opamp_singlestage(
+        pdk=sky130_mapped_pdk,
+        half_diffpair_params=(20.7, 1, 10),
+        diffpair_bias=(5, 1, 1),
+        half_pload=(7, 1, 1)
+    )
+    
+
+    gds_filename = "opamp_singlestage.gds"
+    my_single_opamp.write_gds(gds_filename)
+    print(f"Layout successfully exported to: {os.path.abspath(gds_filename)}")
         
 
-#     print("\n================ Extracted SPICE Netlist ================")
+    print("\n================ Extracted SPICE Netlist ================")
 
-#     try:
-#         netlist_str = my_single_opamp.info['netlist'].generate_netlist()
-#         print(netlist_str)
-#     except AttributeError:
-#         print(my_single_opamp.info['netlist'])
+    try:
+        netlist_str = my_single_opamp.info['netlist'].generate_netlist()
+        print(netlist_str)
+    except AttributeError:
+        print(my_single_opamp.info['netlist'])
