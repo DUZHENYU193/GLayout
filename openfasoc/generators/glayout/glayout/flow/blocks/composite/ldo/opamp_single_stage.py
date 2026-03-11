@@ -44,12 +44,16 @@ def __create_and_route_pins(
 ) -> tuple:
     _max_metal_seperation_ps = pdk.util_max_metal_seperation()
 
+    met4_pin_layer = (pdk.get_glayer("met4")[0], 16)
+    met3_pin_layer = (pdk.get_glayer("met3")[0], 16)
+
     # ==========================================
     # place and route VDD pin to PMOS load (2L/2R)
     # ==========================================
     vddpin = opamp_single_top << rectangle(size=(5,3), layer=pdk.get_glayer("met4"), centered=True)
     vddpin.movey(opamp_single_top.ymax)
     opamp_single_top << straight_route(pdk, opamp_single_top.ports["pcomps_2L2Rsrcvia_top_met_N"], vddpin.ports["e4"])
+
 
     # ==========================================
     # place and route bias pin for diff pair tail current (ibias)
@@ -58,28 +62,40 @@ def __create_and_route_pins(
     vbias1.movey(opamp_single_top.ymin - _max_metal_seperation_ps - vbias1.ymax)
     opamp_single_top << straight_route(pdk, vbias1.ports["e2"], opamp_single_top.ports["diffpair_ibias_B_gate_S"], width=1, fullbottom=False)
 
+
     # ==========================================
     # route the diff pair input pins (VIN+ and VIN-) with antenna violation mitigation
     # ==========================================
     # (VIN-)
     minusi_pin = opamp_single_top << rectangle(size=(5,2), layer=pdk.get_glayer("met3"), centered=True)
-    minusi_pin.movex(opamp_single_top.xmin).movey(opamp_single_top.ports["diffpair_MINUSgateroute_W_con_N"].center[1])
+    minusi_pin.movex(opamp_single_top.xmin-5).movey(opamp_single_top.ports["diffpair_MINUSgateroute_W_con_N"].center[1])
     iport_antenna1 = movex(minusi_pin.ports["e3"], destination=opamp_single_top.ports["diffpair_MINUSgateroute_W_con_N"].center[0]-9*_max_metal_seperation_ps)
     opamp_single_top << L_route(pdk, opamp_single_top.ports["diffpair_MINUSgateroute_W_con_N"], iport_antenna1)
     iport_antenna2 = movex(iport_antenna1, offsetx=-9*_max_metal_seperation_ps)
     opamp_single_top << straight_route(pdk, iport_antenna1, iport_antenna2, glayer1="met4", glayer2="met4", via2_alignment=('c','c'), via1_alignment=('c','c'), fullbottom=True)
     iport_antenna2.layer = pdk.get_glayer("met4")
     opamp_single_top << straight_route(pdk, iport_antenna2, minusi_pin.ports["e3"], glayer1="met3", via2_alignment=('c','c'), via1_alignment=('c','c'), fullbottom=True)
+    
+
+    # minusi_pin = opamp_single_top << rectangle(size=(5,2), layer=pdk.get_glayer("met3"), centered=True)
+    # minusi_pin.movex(opamp_single_top.xmin - 5).movey(opamp_single_top.ports["diffpair_MINUSgateroute_W_con_N"].center[1])
+    # opamp_single_top << L_route(pdk, opamp_single_top.ports["diffpair_MINUSgateroute_W_con_N"], minusi_pin.ports["e3"])
+    
 
     # (VIN+)
     plusi_pin = opamp_single_top << rectangle(size=(5,2), layer=pdk.get_glayer("met3"), centered=True)
-    plusi_pin.movex(opamp_single_top.xmin + plusi_pin.xmax).movey(opamp_single_top.ports["diffpair_PLUSgateroute_E_con_N"].center[1])
-    iport_antenna1_p = movex(plusi_pin.ports["e3"], destination=opamp_single_top.ports["diffpair_PLUSgateroute_E_con_N"].center[0]-9*_max_metal_seperation_ps)
+    plusi_pin.movex(opamp_single_top.xmax + 5).movey(opamp_single_top.ports["diffpair_PLUSgateroute_E_con_N"].center[1])
+    iport_antenna1_p = movex(plusi_pin.ports["e3"], destination=opamp_single_top.ports["diffpair_PLUSgateroute_E_con_N"].center[0] + 9*_max_metal_seperation_ps)
     opamp_single_top << L_route(pdk, opamp_single_top.ports["diffpair_PLUSgateroute_E_con_N"], iport_antenna1_p)
-    iport_antenna2_p = movex(iport_antenna1_p, offsetx=-9*_max_metal_seperation_ps)
+    iport_antenna2_p = movex(iport_antenna1_p, offsetx=9*_max_metal_seperation_ps) 
     opamp_single_top << straight_route(pdk, iport_antenna1_p, iport_antenna2_p, glayer1="met4", glayer2="met4", via2_alignment=('c','c'), via1_alignment=('c','c'), fullbottom=True)
     iport_antenna2_p.layer = pdk.get_glayer("met4")
     opamp_single_top << straight_route(pdk, iport_antenna2_p, plusi_pin.ports["e3"], glayer1="met3", via2_alignment=('c','c'), via1_alignment=('c','c'), fullbottom=True)
+
+
+    # plusi_pin = opamp_single_top << rectangle(size=(5,2), layer=pdk.get_glayer("met3"), centered=True)
+    # plusi_pin.movex(opamp_single_top.xmax + 5).movey(opamp_single_top.ports["diffpair_PLUSgateroute_E_con_N"].center[1])
+    # opamp_single_top << L_route(pdk, opamp_single_top.ports["diffpair_PLUSgateroute_E_con_N"], plusi_pin.ports["e3"])
 
     # ==========================================
     # connect diff pair outputs to PMOS load gates
@@ -94,7 +110,6 @@ def __create_and_route_pins(
     # generate and route output pin from the right PMOS load
     # ==========================================
     vout_pin = opamp_single_top << rectangle(size=(5,3), layer=pdk.get_glayer("met4"), centered=True)
-    
     
     try:
         vout_port = opamp_single_top.ports["pcomps_mimcap_connection_con_E"]
@@ -151,11 +166,11 @@ def opamp_singlestage_netlist(nmos_input_netlist: Netlist, pmos_load_netlist: Ne
 
 def opamp_singlestage(
     pdk: MappedPDK,
-    half_diffpair_params: tuple[float, float, int] = (6, 1, 4),
-    diffpair_bias: tuple[float, float, int] = (6, 2, 4),
-    half_pload: tuple[float,float,int] = (6,1,6),
+    half_diffpair_params: tuple[float, float, int] = (10.5, 0.15, 10),
+    diffpair_bias: tuple[float, float, int] = (6.3, 0.15, 6),
+    half_pload: tuple[float,float,int] = (10.5,0.15,10),
     rmult: int = 2,
-    with_antenna_diode_on_diffinputs: int=5
+    with_antenna_diode_on_diffinputs: int=0
 ) -> Component:
     """
     Creates a single-stage Operational Transconductance Amplifier (OTA).
@@ -201,6 +216,40 @@ def opamp_singlestage(
         pmos_comps.info['netlist']        
     )
 
+
+
+    met3_pin_layer = (pdk.get_glayer("met3")[0], 16)
+    met4_pin_layer = (pdk.get_glayer("met4")[0], 16)
+
+    
+    pin_prefixes = {
+        "pin_vdd_": ("VDD", met4_pin_layer),
+        "pin_gnd_": ("GND", met4_pin_layer),  
+        "pin_vout_": ("VOUT", met4_pin_layer),
+        "pin_minus_": ("VN", met3_pin_layer),
+        "pin_plus_": ("VP", met3_pin_layer),
+        "pin_diffpairibias_": ("VBIAS", met3_pin_layer)
+    }
+
+    
+    found_pins = set()
+
+    
+    for port_name, port in opamp_single_top.ports.items():
+        for prefix, (label_text, layer) in pin_prefixes.items():
+            if port_name.startswith(prefix) and prefix not in found_pins:
+                opamp_single_top.add_label(
+                    text=label_text, 
+                    position=port.center, 
+                    layer=layer
+                )
+                found_pins.add(prefix) 
+
+    
+    for prefix in pin_prefixes.keys():
+        if prefix not in found_pins:
+            print(f"Warning: Could not find any port starting with '{prefix}' to place label.")
+
     return opamp_single_top
 
 if __name__ == "__main__":
@@ -213,9 +262,9 @@ if __name__ == "__main__":
 
     my_single_opamp = opamp_singlestage(
         pdk=sky130_mapped_pdk,
-        half_diffpair_params=(20.7, 1, 10),
-        diffpair_bias=(5, 1, 1),
-        half_pload=(7, 1, 1)
+        half_diffpair_params=(10.5, 0.15, 10),
+        diffpair_bias=(6.3, 0.15, 6),
+        half_pload=(10.5, 0.15, 10)
     )
     
 
